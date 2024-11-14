@@ -1,0 +1,156 @@
+---
+title: "GROUP PROJECT"
+author: "Alberto de Leo"
+date: "2024-11-01"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Import libraries
+
+```{r libriries import message=FALSE, warning=FALSE}
+library(skimr)
+library(pheatmap)
+library(naniar)
+library(corrplot)
+library(class)
+library(plotly)
+library(tidyverse)
+library(factoextra)
+library(compstatslib)
+```
+
+
+#Load the data
+
+```{r}
+#Put your path here be sure about the / and the \
+setwd("C:/Users/Alberto/Desktop/TCD/FOUNDATIONS OF BUSINESS ANALYTICS")
+bank_df = read.csv("./bank.csv", sep=';', stringsAsFactors = T)
+```
+
+#Data Exploration
+
+```{r}
+#Transform the day column to a factor
+bank_df$day <- cut(bank_df$day, breaks = c(0, 10, 20, 31), labels = c("beginning", "middle", "end"))
+```
+
+#Investigate the data
+
+```{r}
+head(bank_df) # display the first 6 rows of the dataframe
+```
+
+```{r}
+str(bank_df) # display the structure of the dataframe
+```
+```{r}
+# Apply levels() to all factor columns in the data frame
+lapply(bank_df[, sapply(bank_df, is.factor)], levels)
+
+```
+```{r}
+bank_df[bank_df == "unknown"] <- NA
+```
+
+```{r}
+dim(bank_df) # find the dimension of data frame
+```
+
+```{r}
+anyDuplicated(bank_df) #check duplicate row
+```
+```{r}
+# Returns a count of NA values per column
+colSums(is.na(bank_df))
+```
+```{r}
+# Remove rows where either column has an NA
+bank_df <- bank_df[!is.na(bank_df$job) & !is.na(bank_df$education), ]
+
+```
+
+
+
+```{r}
+skim(bank_df) #watch a complete summary of data
+```
+
+#Class unbalance
+
+```{r}
+#Display the value of the target variable
+table(bank_df$y)
+```
+
+#Pie chart
+
+```{r}
+# Calculate the frequency of Attrition
+y_counts <- table(bank_df$y)
+
+# Create a pie chart
+pie(y_counts, labels = paste(names(y_counts), round(y_counts/sum(y_counts)*100, 1), "%"),
+    col = c("lightblue", "lightcoral"), main = "Distribution of Y variable")
+```
+#Outlier detection
+Interquartile rule
+
+```{r}
+outlier_row = c()
+for(i in 1:ncol(bank_df[,-ncol(bank_df)])){
+  if (is.factor(bank_df[,i]) == FALSE){
+    
+    boxplot(bank_df[,i], col = rgb(.7,.7,.7), main = names(bank_df)[i], horizontal = TRUE)
+    
+    quartiles = quantile(bank_df[,i], probs=c(.25, .75), na.rm = TRUE)
+    
+    IQR = IQR(bank_df[,i])
+    
+    Lower = quartiles[1] - 1.5*IQR 
+    Upper = quartiles[2] + 1.5*IQR 
+    
+    counter = 0
+    for(row in bank_df[,i]){
+      counter = counter + 1
+      if (row < Lower || row > Upper){
+        if (!(counter %in% outlier_row)){
+          outlier_row = append(outlier_row, counter)
+          
+        }}}}}
+
+outlier_row <- outlier_row[duplicated(outlier_row)]
+
+#number of outlier detected from 
+length(outlier_row) 
+```
+
+
+#Correlation Matrix
+
+```{r}
+col_vect <- c()
+
+for(i in 1:ncol(bank_df[,-ncol(bank_df)])){
+  if (is.factor(bank_df[,i]) == FALSE){
+    col_vect <- append(col_vect,names(bank_df)[i])}}
+
+(Cor.Matrix = cor(bank_df[,col_vect]))
+
+
+pheatmap(Cor.Matrix, display_numbers = TRUE, number_format = "%.2f")
+```
+
+```{r}
+# Writing to CSV
+write.csv(bank_df, "cleaned_bank.csv", row.names = FALSE)
+```
+
+```{r}
+boxplot()
+```
+
